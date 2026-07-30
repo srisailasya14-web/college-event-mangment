@@ -30,6 +30,11 @@ public class Server {
     }
 
     private void handleRegister(HttpExchange exchange) throws IOException {
+        if (isOptions(exchange)) {
+            sendOptions(exchange);
+            return;
+        }
+
         try {
             Map<String, String> body = readForm(exchange);
             boolean ok = authService.registerStudent(
@@ -50,6 +55,11 @@ public class Server {
     }
 
     private void handleLogin(HttpExchange exchange) throws IOException {
+        if (isOptions(exchange)) {
+            sendOptions(exchange);
+            return;
+        }
+
         try {
             Map<String, String> body = readForm(exchange);
             boolean ok = authService.loginStudent(body.getOrDefault("email", ""), body.getOrDefault("password", ""));
@@ -80,8 +90,24 @@ public class Server {
         return values;
     }
 
+    private boolean isOptions(HttpExchange exchange) {
+        return "OPTIONS".equalsIgnoreCase(exchange.getRequestMethod());
+    }
+
+    private void sendOptions(HttpExchange exchange) throws IOException {
+        addCorsHeaders(exchange);
+        exchange.sendResponseHeaders(204, -1);
+    }
+
+    private void addCorsHeaders(HttpExchange exchange) {
+        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type");
+    }
+
     private void sendJson(HttpExchange exchange, int status, String payload) throws IOException {
         byte[] bytes = payload.getBytes(StandardCharsets.UTF_8);
+        addCorsHeaders(exchange);
         exchange.getResponseHeaders().set("Content-Type", "application/json;charset=utf-8");
         exchange.sendResponseHeaders(status, bytes.length);
         try (OutputStream os = exchange.getResponseBody()) {

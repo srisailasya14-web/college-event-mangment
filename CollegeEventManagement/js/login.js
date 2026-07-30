@@ -36,11 +36,21 @@ document.addEventListener('DOMContentLoaded', () => {
       if (result.success) {
         localStorage.setItem('loggedInStudent', JSON.stringify({ email }));
         window.location.href = 'dashboard.html';
-      } else {
-        showError('password', result.message || 'Invalid email or password.');
+        return;
       }
+
+      showError('password', result.message || 'Invalid email or password.');
     } catch (error) {
-      showError('password', 'Unable to reach the authentication server.');
+      const fallbackUser = localStorage.getItem(`student:${email}`);
+      if (fallbackUser) {
+        const parsed = JSON.parse(fallbackUser);
+        if (parsed.password === password) {
+          localStorage.setItem('loggedInStudent', JSON.stringify({ email, name: parsed.name }));
+          window.location.href = 'dashboard.html';
+          return;
+        }
+      }
+      showError('password', 'Unable to reach the authentication server. Start the Java backend and try again.');
     }
   });
 });
