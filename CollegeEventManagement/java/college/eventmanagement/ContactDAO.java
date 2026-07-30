@@ -5,20 +5,16 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class ContactDAO {
-    private static final java.util.List<ContactMessage> FALLBACK_MESSAGES = new java.util.ArrayList<>();
-
-    public boolean saveMessage(ContactMessage message) {
+    public boolean saveMessage(String name, String email, String subject, String message) throws SQLException {
         String sql = "INSERT INTO contact_messages (name, email, subject, message) VALUES (?, ?, ?, ?)";
+
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, message.getName());
-            statement.setString(2, message.getEmail());
-            statement.setString(3, message.getSubject());
-            statement.setString(4, message.getMessage());
+            statement.setString(1, name);
+            statement.setString(2, email);
+            statement.setString(3, subject);
+            statement.setString(4, message);
             return statement.executeUpdate() > 0;
-        } catch (SQLException exception) {
-            FALLBACK_MESSAGES.add(message);
-            return true;
         }
     }
 }

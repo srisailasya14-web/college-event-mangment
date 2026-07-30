@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('loginForm');
   if (!form) return;
 
-  form.addEventListener('submit', (event) => {
+  form.addEventListener('submit', async (event) => {
     event.preventDefault();
     clearErrors(form);
 
@@ -25,14 +25,22 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const students = JSON.parse(localStorage.getItem('students') || '[]');
-    const student = students.find((entry) => entry.email === email && entry.password === password);
+    try {
+      const response = await fetch('http://localhost:8080/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body: new URLSearchParams({ email, password })
+      });
 
-    if (student) {
-      localStorage.setItem('loggedInStudent', JSON.stringify({ email: student.email, name: student.name }));
-      window.location.href = 'dashboard.html';
-    } else {
-      showError('password', 'Invalid email or password.');
+      const result = await response.json();
+      if (result.success) {
+        localStorage.setItem('loggedInStudent', JSON.stringify({ email }));
+        window.location.href = 'dashboard.html';
+      } else {
+        showError('password', result.message || 'Invalid email or password.');
+      }
+    } catch (error) {
+      showError('password', 'Unable to reach the authentication server.');
     }
   });
 });

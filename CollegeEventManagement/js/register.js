@@ -2,17 +2,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('registerForm');
   if (!form) return;
 
-  form.addEventListener('submit', (event) => {
+  form.addEventListener('submit', async (event) => {
     event.preventDefault();
     clearErrors(form);
 
     const data = {
-      name: document.getElementById('name').value,
-      rollNumber: document.getElementById('rollNumber').value,
-      department: document.getElementById('department').value,
+      name: document.getElementById('name').value.trim(),
+      rollNumber: document.getElementById('rollNumber').value.trim(),
+      department: document.getElementById('department').value.trim(),
       year: document.getElementById('year').value,
-      email: document.getElementById('email').value,
-      phone: document.getElementById('phone').value,
+      email: document.getElementById('email').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
       password: document.getElementById('password').value
     };
 
@@ -51,16 +51,22 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const students = JSON.parse(localStorage.getItem('students') || '[]');
-    const existing = students.some((student) => student.email === data.email);
-    if (existing) {
-      showError('email', 'This email is already registered.');
-      return;
-    }
+    try {
+      const response = await fetch('http://localhost:8080/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body: new URLSearchParams(data)
+      });
 
-    students.push({ ...data, id: Date.now() });
-    localStorage.setItem('students', JSON.stringify(students));
-    localStorage.setItem('loggedInStudent', JSON.stringify({ email: data.email, name: data.name }));
-    window.location.href = 'dashboard.html';
+      const result = await response.json();
+      if (result.success) {
+        localStorage.setItem('loggedInStudent', JSON.stringify({ email: data.email, name: data.name }));
+        window.location.href = 'dashboard.html';
+      } else {
+        showError('email', result.message || 'Registration failed.');
+      }
+    } catch (error) {
+      showError('email', 'Unable to reach the authentication server.');
+    }
   });
 });
